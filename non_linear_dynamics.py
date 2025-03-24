@@ -3,7 +3,7 @@ import json
 import matplotlib.pyplot as plt
 
 def dynamics(y,params,F):
-    x, v, theta1, omega1, theta2, omega2 = y
+    x, theta1, theta2, v, omega1, omega2 = y
     M, m1, m2 = params["M"], params["m1"], params["m2"]
     L1, L2 = params["L1"], params["L2"]
     l1, l2 = params["l1"], params["l2"]
@@ -26,7 +26,7 @@ def dynamics(y,params,F):
     x_ddot, theta1_ddot, theta2_ddot = np.linalg.solve(A, B)
 
     #returning the derivative of the states
-    return np.array([v, x_ddot, omega1, theta1_ddot, omega2, theta2_ddot])
+    return np.array([v, omega1, omega2, x_ddot, theta1_ddot, theta2_ddot])
 
 # RK4 Integration
 def rk4_step(xk, dt, params,F):
@@ -46,13 +46,13 @@ if __name__ == "__main__":
         params = json.load(file) 
 
     # Initial conditions
-    y = np.array([0, 0, 0, 0, 0, 0])
+    y = np.array([0, 0.1, 0.1, 0, 0, 0])
     states = [y]
 
     # Simulation loop
     for t in time:
         if t==0:
-            y = rk4_step(y, dt,params,0.001)
+            y = rk4_step(y, dt,params,0)
         else:
             y = rk4_step(y, dt,params,0)
         states.append(y)
@@ -60,8 +60,8 @@ if __name__ == "__main__":
     # Convert to array for analysis
     states = np.array(states)
 
+    states[:,1] = states[:,1]%(2 * np.pi) - np.pi
     states[:,2] = states[:,2]%(2 * np.pi) - np.pi
-    states[:,4] = states[:,4]%(2 * np.pi) - np.pi
     plt.plot(states[:,2])
     plt.savefig("theta1.png")
     plt.figure()

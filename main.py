@@ -7,6 +7,7 @@ import control as ct
 from non_linear_dynamics import dynamics,rk4_step
 from draw import animated
 from mpc_solver import mpc_solve
+import math
 
 with open("config.json", "r") as file:
     params = json.load(file) 
@@ -51,7 +52,7 @@ Cc = np.eye(Ac.shape[0])
 Dc = np.zeros(Bc.shape)
 
 #discretizing the system
-dt=0.01
+dt=0.1
 dsys = sp.signal.cont2discrete((Ac,Bc,Cc,Dc),dt,method='zoh')
 
 A = dsys[0]
@@ -64,39 +65,44 @@ D = dsys[3]
 
 print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
 
-Q = sp.linalg.block_diag(100,10000,10000,1,1,1)
+Q = sp.linalg.block_diag(100,100,100,1,1,1)
 
 R = 10
 
 P = np.eye(A.shape[0])
 
-T = 10
+T = 20
 time = np.arange(0, T, dt)
 
-y = np.array([0, 0, np.pi/100, 0, np.pi/100, 0])
+y = np.array([0, np.pi/10, np.pi/10, 0, 0, 0])
 states = [y]
 # print(y.shape)
 
 #constraints
 
-theta_const = float('inf')
-x_const = float('inf')
+theta_const = math.radians(30)
+x_const = 10
 
-x_ub = np.array([x_const,float('inf'),theta_const,float('inf'),theta_const,float('inf')])
-x_lb = np.array([-x_const,float('-inf'),-theta_const,float('-inf'),-theta_const,float('-inf')])
+x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
+x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')])
 u_ub = float('inf') 
 u_lb = float('-inf') 
 
+control_inputs = [0]
 
 #MPC horizon
-N = 10       #currently defined as 100 time steps ahead
+N = 50      #currently defined as 100 time steps ahead
 # Simulation loop
 for t in time:
     u = mpc_solve(A, B, Q, R, P, states[-1], N, x_lb, x_ub, u_lb, u_ub)
     # print(f"On time step",t)
-    # print(u[0][0])
     y = rk4_step(y, dt,params,u[0][0])
+    control_inputs.append(u[0][0])
     states.append(y)
 
 states = np.array(states)
 animated(states, time, params)
+
+plt.figure()
+plt.plot(control_inputs)
+plt.savefig("Control_input.png")

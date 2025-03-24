@@ -8,8 +8,8 @@ from IPython.display import HTML
 def animated(states,time,params):
     # Extract state variables
     x_vals = states[:, 0]   
-    theta1_vals = states[:, 2]
-    theta2_vals = states[:, 4]
+    theta1_vals = states[:, 1]
+    theta2_vals = states[:, 2]
     L1, L2 = params["L1"], params["L2"]
     l1, l2 = params["l1"], params["l2"]
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     time = np.arange(0, T, dt)
 
     # Initial conditions
-    y = np.array([0, 0, np.pi/2, 0, np.pi/2, 0])
+    y = np.array([0, 0, 0, 0, 0, 0])
     states = [y]
 
     # Simulation loop
