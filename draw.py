@@ -3,14 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from non_linear_dynamics import rk4_step, dynamics
 import json
+from IPython.display import HTML
 
-
-def animates(states,time,params):
+def animated(states,time,params):
     # Extract state variables
     x_vals = states[:, 0]   
     theta1_vals = states[:, 2]
     theta2_vals = states[:, 4]
-
     L1, L2 = params["L1"], params["L2"]
     l1, l2 = params["l1"], params["l2"]
 
@@ -24,7 +23,7 @@ def animates(states,time,params):
 
     # Setup figure
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.set_xlim(-2, 2)
+    ax.set_xlim(-10, 10)
     ax.set_ylim(-1, 1)
     ax.set_xlabel("X position")
     ax.set_ylabel("Y position")
@@ -49,7 +48,9 @@ def animates(states,time,params):
 
     # Animate
     ani = animation.FuncAnimation(fig, update, frames=len(time), init_func=init, blit=False, interval=10)
+    
     plt.show()
+
 
 if __name__ == '__main__':
     
@@ -61,18 +62,18 @@ if __name__ == '__main__':
     time = np.arange(0, T, dt)
 
     # Initial conditions
-    y = np.array([0, 0, 0, 0, 0, 0])
+    y = np.array([0, 0, np.pi/2, 0, np.pi/2, 0])
     states = [y]
 
     # Simulation loop
     for t in time:
-        if t % 2 == 0:
-            y = rk4_step(y, dt,params,0)
+        if t == 0:
+            y = rk4_step(y, dt,params,1)
         else:
             y = rk4_step(y, dt,params,0)
         states.append(y)
 
     states = np.array(states)
 
-    animates(states,time,params)
+    animated(states,time,params)
 
