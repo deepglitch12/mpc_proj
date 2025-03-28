@@ -6,7 +6,6 @@ import scipy as sp
 import control as ct
 from non_linear_dynamics import dynamics,rk4_step
 from draw import animated
-from mpc_solver import mpc_solve
 import math
 
 with open("config.json", "r") as file:
@@ -62,71 +61,41 @@ B = dsys[1]
 C = dsys[2]
 D = dsys[3]
 
-# print(f"Eigen Values of A:",np.linalg.eigvals(A))
-# print(f"Dominant Eigen Value:",min(np.real(A)))
-
-
-# LQR Control
-#defining the weights
-
-print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
-
 Q = sp.linalg.block_diag(100,100,100,1,1,1)
 
 R = 1
 
-P = np.eye(A.shape[0])
+K,S,E = ct.dlqr(A,B,Q,R)
 
 T = 10
 time = np.arange(0, T, dt)
 
 y = np.array([0, np.pi/20, -np.pi/20, 0, 0, 0])
 states = [y]
-# print(y.shape)
-
-#constraints
-
-theta_const = math.radians(15)
-x_const = 3
-
-x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
-x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')])
-u_ub = float('inf') 
-u_lb = float('-inf') 
-
 control_inputs = [0]
 
-#MPC horizon
-N = (T/dt)*0.20
-N = int(N)  
-print(N)
-# Simulation loop
 for t in time:
-    u = mpc_solve(A, B, Q, R, P, states[-1], N, x_lb, x_ub, u_lb, u_ub)
-    print(f"Percentage done",(t/T)*100)
-    y = rk4_step(y, dt,params,u[0][0])
-    control_inputs.append(u[0][0])
-    print(f"Position:",y[0])
-    print(f"Theta1:",y[1])
-    print(f"Theta2:",y[2])
+    u = - K @ y
+    # print(u)
+    y = rk4_step(y, dt,params,u[0])
     states.append(y)
+    control_inputs.append(u[0])
 
 states = np.array(states)
 animated(states, time, params, control_inputs)
 
-
 plt.figure()
 plt.plot(control_inputs)
-plt.savefig("Control_input.png")
+plt.savefig("Control_input_lqr.png")
 
 plt.figure()
 plt.plot(states[:,0])
-plt.savefig("Position.png")
+plt.savefig("Position_lqr.png")
 
 plt.figure()
 plt.plot(states[:,1])
-plt.savefig("theta1.png")
+plt.savefig("theta1_lqr.png")
 
 plt.figure()
 plt.plot(states[:,2])
-plt.savefig("theta2.png")
+plt.savefig("theta2_lqr.png")

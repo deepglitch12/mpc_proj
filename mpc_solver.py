@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import json
 import scipy as sp
 import control as ct
+import gurobipy
 
 def mpc_solve(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub):
     
@@ -22,8 +23,8 @@ def mpc_solve(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub):
     constraints += [x_bar[0, :] == x0]
     for t in range(N):
         constraints += [x_bar[t+1, :] == A @ x_bar[t, :] + B @ u_bar[t, :]]
-        constraints += [x_bar <= x_ub , x_bar >= x_lb]
-        constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub]
+        # constraints += [x_bar[t+1, :] <= x_ub , x_bar[t+1,:] >= x_lb]
+        # constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub] #gr
 
         cost += 0.5 * cp.quad_form(x_bar[t, :], Q) + 0.5 * cp.quad_form(u_bar[t, :], R*np.eye(u_bar[t,:].shape[0]))
     
@@ -31,7 +32,7 @@ def mpc_solve(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub):
     
     # Solve the problem
     prob = cp.Problem(cp.Minimize(cost), constraints)
-    prob.solve()
+    prob.solve(solver = cp.GUROBI,verbose=False)
     
     return u_bar.value
 
@@ -99,11 +100,11 @@ if __name__ == '__main__':
 
     P = np.eye(A.shape[0])
 
-    dt = 0.01
+    dt = 0.1
     T = 10
     time = np.arange(0, T, dt)
 
-    y = np.array([0, 0, np.pi/100, 0, np.pi/100, 0])
+    y = np.array([0, np.pi/100, np.pi/100, 0, 0, 0])
     states = [y]
 
     #constraints
