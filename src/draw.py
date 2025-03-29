@@ -5,7 +5,7 @@ from non_linear_dynamics import rk4_step, dynamics
 import json
 from IPython.display import HTML
 
-def animated(states,time,params,force):
+def animated(states,time,params,force,name):
     # Extract state variables
     x_vals = states[:, 0]   
     theta1_vals = states[:, 1]
@@ -59,7 +59,7 @@ def animated(states,time,params,force):
     print()
     
     plt.show()
-    ani.save("result.gif", writer="pillow", fps=20)
+    ani.save(name, writer="pillow", fps=20)
 
 
 if __name__ == '__main__':
@@ -87,5 +87,5 @@ if __name__ == '__main__':
 
     force = np.ones(time.shape[0]+1)
 
-    animated(states,time,params,force)
+    animated(states,time,params,force,"test_sim.gif")
 

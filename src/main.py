@@ -8,8 +8,14 @@ from non_linear_dynamics import dynamics,rk4_step
 from draw import animated
 from mpc_solver import mpc_solve
 import math
+from pathlib import Path
 
-with open("config.json", "r") as file:
+
+path_in_dir_script = Path(__file__).parent #fold where the main script is
+path_out_dir = path_in_dir_script / "../out/MPC"
+path_out_dir.mkdir(exist_ok=True)
+
+with open(path_in_dir_script/"config.json", "r") as file:
     params = json.load(file) 
 
 #defining the constants
@@ -89,7 +95,7 @@ states = [y]
 
 theta_const = math.radians(15)
 x_const = 3
-u_const = 200
+u_const = 500
 
 
 x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
@@ -100,7 +106,7 @@ u_lb = -u_const
 control_inputs = [0]
 
 #MPC horizon
-N = (T/dt)*0.25
+N = (T/dt)*0.5
 N = int(N)  
 print(N)
 # Simulation loop
@@ -118,19 +124,18 @@ for t in time:
 states = np.array(states)
 animated(states, time, params, control_inputs)
 
-
 plt.figure()
 plt.plot(control_inputs)
-plt.savefig("Control_input.png")
+plt.savefig(path_out_dir/"./Control_input.png")
 
 plt.figure()
 plt.plot(states[:,0])
-plt.savefig("Position.png")
+plt.savefig(path_out_dir/"./Position.png")
 
 plt.figure()
-plt.plot(states[:,1])
-plt.savefig("theta1.png")
+plt.plot(np.rad2deg(states[:,1]))
+plt.savefig(path_out_dir/"./theta1.png")
 
 plt.figure()
-plt.plot(states[:,2])
-plt.savefig("theta2.png")
+plt.plot(np.rad2deg(states[:,2]))
+plt.savefig(path_out_dir/"./theta2.png")

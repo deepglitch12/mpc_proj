@@ -7,8 +7,14 @@ import control as ct
 from non_linear_dynamics import dynamics,rk4_step
 from draw import animated
 import math
+from pathlib import Path
 
-with open("config.json", "r") as file:
+
+path_in_dir_script = Path(__file__).parent #fold where the main script is
+path_out_dir = path_in_dir_script / "../out/LQR"
+path_out_dir.mkdir(exist_ok=True)
+
+with open(path_in_dir_script/"config.json", "r") as file:
     params = json.load(file) 
 
 #defining the constants
@@ -82,20 +88,20 @@ for t in time:
     control_inputs.append(u[0])
 
 states = np.array(states)
-animated(states, time, params, control_inputs)
+animated(states, time, params, control_inputs,path_out_dir/"./Simualtion_lqr.gif")
 
 plt.figure()
 plt.plot(control_inputs)
-plt.savefig("Control_input_lqr.png")
+plt.savefig(path_out_dir/"./Control_input_lqr.png")
 
 plt.figure()
 plt.plot(states[:,0])
-plt.savefig("Position_lqr.png")
+plt.savefig(path_out_dir/"./Position_lqr.png")
 
 plt.figure()
-plt.plot(states[:,1])
-plt.savefig("theta1_lqr.png")
+plt.plot(np.rad2deg(states[:,1]))
+plt.savefig(path_out_dir/"./theta1_lqr.png")
 
 plt.figure()
-plt.plot(states[:,2])
-plt.savefig("theta2_lqr.png")
+plt.plot(np.rad2deg(states[:,2]))
+plt.savefig(path_out_dir/"./theta2_lqr.png")
