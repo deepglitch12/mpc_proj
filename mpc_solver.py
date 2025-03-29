@@ -23,8 +23,8 @@ def mpc_solve(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub):
     constraints += [x_bar[0, :] == x0]
     for t in range(N):
         constraints += [x_bar[t+1, :] == A @ x_bar[t, :] + B @ u_bar[t, :]]
-        # constraints += [x_bar[t+1, :] <= x_ub , x_bar[t+1,:] >= x_lb]
-        # constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub] #gr
+        constraints += [x_bar[t+1, :] <= x_ub , x_bar[t+1,:] >= x_lb]
+        constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub] 
 
         cost += 0.5 * cp.quad_form(x_bar[t, :], Q) + 0.5 * cp.quad_form(u_bar[t, :], R*np.eye(u_bar[t,:].shape[0]))
     

@@ -73,14 +73,15 @@ print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
 
 Q = sp.linalg.block_diag(100,100,100,1,1,1)
 
-R = 1
+R = 10
 
-P = np.eye(A.shape[0])
+#solution to dare
+P ,_,_ = ct.dare(A, B,Q,R)
 
 T = 10
 time = np.arange(0, T, dt)
 
-y = np.array([0, np.pi/20, -np.pi/20, 0, 0, 0])
+y = np.array([0, math.radians(10), -math.radians(10), 0, 0, 0])
 states = [y]
 # print(y.shape)
 
@@ -88,16 +89,18 @@ states = [y]
 
 theta_const = math.radians(15)
 x_const = 3
+u_const = 200
+
 
 x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
 x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')])
-u_ub = float('inf') 
-u_lb = float('-inf') 
+u_ub = u_const
+u_lb = -u_const
 
 control_inputs = [0]
 
 #MPC horizon
-N = (T/dt)*0.20
+N = (T/dt)*0.25
 N = int(N)  
 print(N)
 # Simulation loop
@@ -109,6 +112,7 @@ for t in time:
     print(f"Position:",y[0])
     print(f"Theta1:",y[1])
     print(f"Theta2:",y[2])
+    print(f'Force:',u[0][0])
     states.append(y)
 
 states = np.array(states)
