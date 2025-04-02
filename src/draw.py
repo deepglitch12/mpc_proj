@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from non_linear_dynamics import rk4_step, dynamics
+from non_linear_dynamics import rk4_step, dynamics, rk4_step_noise, dist_noise_dynamics
 import json
 from IPython.display import HTML
+from pathlib import Path
 
 def animated(states,time,params,force,name):
     # Extract state variables
@@ -62,30 +63,40 @@ def animated(states,time,params,force,name):
     ani.save(name, writer="pillow", fps=20)
 
 
-if __name__ == '__main__':
-    
-    with open("config.json", "r") as file:
-        params = json.load(file)
-    # Define parameters
+if __name__ == "__main__":
+    # Time setup
     dt = 0.01
-    T = 0.01
+    T = 10
     time = np.arange(0, T, dt)
 
+    path_in_dir_script = Path(__file__).parent #fold where the main script is
+    path_out_dir = path_in_dir_script / "../out/MPC"
+    path_out_dir.mkdir(exist_ok=True)
+
+    with open(path_in_dir_script/"config.json", "r") as file:
+        params = json.load(file) 
+
     # Initial conditions
-    y = np.array([0, 0.1, -0.1, 0, 0, 0])
+    y = np.array([0, 0.1, 0.1, 0, 0, 0])
     states = [y]
+
+    noise_std = np.eye(y.shape[0])
+
+    dist = [0]
 
     # Simulation loop
     for t in time:
-        if t*100 % 2 ==  0:
-            y = rk4_step(y, dt,params,0)
+        if t<T/2:
+            y = rk4_step_noise(y, dt,params,0,0.1,noise_std=noise_std)
+            dist.append(1)
         else:
-            y = rk4_step(y, dt,params,0)
+            y = rk4_step_noise(y, dt,params,0,0,noise_std=noise_std)
+            dist.append(0)
         states.append(y)
 
+    # Convert to array for analysis
     states = np.array(states)
 
-    force = np.ones(time.shape[0]+1)
+    dist = np.array(dist)
 
-    animated(states,time,params,force,"test_sim.gif")
-
+    animated(states, time, params, dist,"test_sim.gif")
