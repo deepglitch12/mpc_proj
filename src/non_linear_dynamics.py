@@ -121,7 +121,6 @@ if __name__ == "__main__":
 
     dist = np.array(dist)
 
-    animated(states, time, params, dist,path_out_dir/"MPC.gif")
 
 
 
