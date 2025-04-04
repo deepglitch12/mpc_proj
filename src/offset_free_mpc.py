@@ -9,6 +9,7 @@ from draw import animated
 from mpc_solver import mpc_solve
 import math
 from pathlib import Path
+from optimal_target import opti_target_online
 
 
 path_in_dir_script = Path(__file__).parent #fold where the main script is
@@ -101,21 +102,19 @@ T = 5
 time = np.arange(0, T, dt)
 
 #Q and R Matrices
-Q = sp.linalg.block_diag(1000,100,100,1,1,1,0) #having no weight on the disturbance component
+Q = sp.linalg.block_diag(1000,100,100,1,1,1) #having no weight on the disturbance component
 
 R = 100
 
 #solution to dare
-P ,_,K = ct.dare(A, B ,Q[:-1,:-1] ,R)
-
-P = sp.linalg.block_diag(P,1)
+P ,_,K = ct.dare(A, B ,Q, R)
 
 #Noise covariance for the system
-meas_cov = np.diag([1e-4, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2])
-dyn_cov = np.diag([1e-6, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3,0])
+meas_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2])
+dyn_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3,0])
 
 #Disturbance on the system
-dist = 1 #constant disturbance to the system
+dist = 10 #constant disturbance to the system
 
 #prior for kalman filter
 x_aug = np.array([0, 0, 0, 0, 0, 0, 0]) #augmented states with disturbance
@@ -130,28 +129,42 @@ states = [y]
 theta_const = math.radians(10)
 x_const = 3
 u_const = 100
+o = 5
 
-x_ref = np.array([0,math.radians(0),-math.radians(0),0,0,0,0])
-
-x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf'),float('inf')])
-x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf'),float('-inf')])
+x_ub = np.array([x_const, theta_const, theta_const, o, o, o])
+x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o])
 u_ub = u_const
 u_lb = -u_const
 
+#selecting our desired final state
+x_des = np.array([0,math.radians(0),math.radians(0),0,0,0])
+u_des = 0
+
 control_inputs = [0]
 
+#determining the horizon
 N = (T/dt)*0.2
 N = int(N) 
 
+#storing the errors
 error = y - x_aug[:-1]
 error = [error]
 
+#storing the optimal target
+x_target = []
+u_target = []
+
 #Off-set free MPC with Kalman filter
 for t in time:
-
+    
     print(f"Percentage done",(t/T)*100)
+    #determining optimal target
+    x_ref ,u_ref = opti_target_online(A, B, C, x_aug[-1], 0, x_des=x_des, u_des=u_des)
+    x_target.append(x_ref)
+    u_target.append(u_ref)
+
     #solving the MPC
-    u = mpc_solve(A_aug, B_aug, Q, R, P, x_aug, N, x_lb, x_ub, u_lb, u_ub, x_ref)
+    u = mpc_solve(A, B, Q, R, P, x_aug[:-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
 
     #time update
     x_aug = A_aug @ x_aug + B_aug @ u[0]
@@ -178,11 +191,15 @@ for t in time:
 states = np.array(states)
 error = np.array(error)
 states_aug = np.array(states_aug)
+x_target = np.array(x_target)
+u_target = np.array(u_target)
+
 animated(states, time, params, control_inputs,path_out_dir/"MPC_offset_free.gif")
 
+#plotting everything
 plt.figure()
-plt.plot(control_inputs)
-plt.savefig(path_out_dir/"./Control_input_offset_free.png")
+plt.plot(states_aug[:,6])
+plt.savefig(path_out_dir/"./Estimated_Disturbance.png")
 
 plt.figure()
 plt.plot(states_aug[:,0])
@@ -190,11 +207,19 @@ plt.savefig(path_out_dir/"./Position_offset_free.png")
 
 plt.figure()
 plt.plot(np.rad2deg(states_aug[:,1]))
-plt.savefig(path_out_dir/"./theta1_offset_free.png")
+plt.plot(np.rad2deg(states_aug[:,2]))
+plt.legend(['Theta1','Theta2'])
+plt.savefig(path_out_dir/"./theta_offset_free.png")
 
 plt.figure()
-plt.plot(np.rad2deg(states_aug[:,2]))
-plt.savefig(path_out_dir/"./theta2_offset_free.png")
+plt.plot(states_aug[:,3])
+plt.savefig(path_out_dir/"./Position_dot_offset_free.png")
+
+plt.figure()
+plt.plot(states_aug[:,4])
+plt.plot(states_aug[:,5])
+plt.legend(['Theta1_dot','Theta2_dot'])
+plt.savefig(path_out_dir/"./theta_dot_offset_free.png")
 
 plt.figure()
 plt.plot(control_inputs)
@@ -206,8 +231,40 @@ plt.savefig(path_out_dir/"./Position_error.png")
 
 plt.figure()
 plt.plot(np.rad2deg(error[:,1]))
-plt.savefig(path_out_dir/"./theta1_error.png")
+plt.plot(np.rad2deg(error[:,2]))
+plt.legend(['Theta1','Theta2'])
+plt.savefig(path_out_dir/"./theta_error.png")
 
 plt.figure()
-plt.plot(np.rad2deg(error[:,2]))
-plt.savefig(path_out_dir/"./theta2_error.png")
+plt.plot(error[:,3])
+plt.savefig(path_out_dir/"./Position_dot_error.png")
+
+plt.figure()
+plt.plot(error[:,4])
+plt.plot(error[:,5])
+plt.legend(['Theta1_dot','Theta2_dot'])
+plt.savefig(path_out_dir/"./theta_dot_error.png")
+
+plt.figure()
+plt.plot(x_target[:,0])
+plt.savefig(path_out_dir/"./Position_target.png")
+
+plt.figure()
+plt.plot(np.rad2deg(x_target[:,1]))
+plt.plot(np.rad2deg(x_target[:,2]))
+plt.legend(['Theta1','Theta2'])
+plt.savefig(path_out_dir/"./theta_target.png")
+
+plt.figure()
+plt.plot(x_target[:,3])
+plt.savefig(path_out_dir/"./Position_dot_target.png")
+
+plt.figure()
+plt.plot(x_target[:,4])
+plt.plot(x_target[:,5])
+plt.legend(['Theta1_dot','Theta2_dot'])
+plt.savefig(path_out_dir/"./theta_dot_target.png")
+
+plt.figure()
+plt.plot(u_target)
+plt.savefig(path_out_dir/"./Control_input_target.png")

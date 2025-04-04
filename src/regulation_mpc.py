@@ -93,6 +93,7 @@ x_const = 3
 u_const = 100
 
 x_ref = np.array([2,math.radians(0),-math.radians(0),0,0,0])
+u_ref = 0
 
 x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
 x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')])
@@ -107,7 +108,7 @@ N = int(N)
 print(N)
 # Simulation loop
 for t in time:
-    u = mpc_solve(A, B, Q, R, P, states[-1], N, x_lb, x_ub, u_lb, u_ub,x_ref)
+    u = mpc_solve(A, B, Q, R, P, states[-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
     print(f"Percentage done",(t/T)*100)
     y = rk4_step(y, dt,params,u[0][0])
     control_inputs.append(u[0][0])
@@ -124,14 +125,23 @@ plt.figure()
 plt.plot(control_inputs)
 plt.savefig(path_out_dir/"./Control_input.png")
 
+
 plt.figure()
 plt.plot(states[:,0])
-plt.savefig(path_out_dir/"./Position.png")
+plt.savefig(path_out_dir/"./Position_offset_free.png")
 
 plt.figure()
 plt.plot(np.rad2deg(states[:,1]))
-plt.savefig(path_out_dir/"./theta1.png")
+plt.plot(np.rad2deg(states[:,2]))
+plt.legend(['Theta1','Theta2'])
+plt.savefig(path_out_dir/"./theta_offset_free.png")
 
 plt.figure()
-plt.plot(np.rad2deg(states[:,2]))
-plt.savefig(path_out_dir/"./theta2.png")
+plt.plot(states[:,3])
+plt.savefig(path_out_dir/"./Position_dot_offset_free.png")
+
+plt.figure()
+plt.plot(states[:,4])
+plt.plot(states[:,5])
+plt.legend(['Theta1_dot','Theta2_dot'])
+plt.savefig(path_out_dir/"./theta_dot_offset_free.png")
