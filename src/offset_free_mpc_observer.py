@@ -10,6 +10,7 @@ from mpc_solver import mpc_solve
 import math
 from pathlib import Path
 from optimal_target import opti_target_online
+from scipy.signal import place_poles
 
 
 path_in_dir_script = Path(__file__).parent #fold where the main script is
@@ -107,7 +108,7 @@ else:
     print("The Modified System is Detectable")
 
 #Duration of the experiment
-T = 10
+T = 5
 time = np.arange(0, T, dt)
 
 #Q and R Matrices
@@ -118,9 +119,12 @@ R = 100
 #solution to dare
 P ,_,K = ct.dare(A, B ,Q, R)
 
-#Noise covariance for the system
-meas_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2])
-dyn_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3,0])
+#poles of observer (placed inside the unit circle)
+poles = [0.75,0.7,0.6,0.75,0.75,0.75,0.9]
+
+L = place_poles(A_aug.T,C_aug.T,poles)
+L = L.gain_matrix.T
+
 
 #Disturbance on the system
 dist = 1 #constant disturbance to the system
@@ -170,7 +174,7 @@ error = [error]
 x_target = []
 u_target = []
 
-#Off-set free MPC with Kalman filter
+#Off-set free MPC with observer
 for t in time:
     
     print(f"Percentage done",(t/T)*100)
@@ -182,17 +186,9 @@ for t in time:
     #solving the MPC
     u = mpc_solve(A, B, Q, R, P, x_aug[:-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
 
-    #time update
-    
-    x_aug = A_aug @ x_aug + (B_aug @ u[0][0]).reshape(-1,1)
-    P_cov = A_aug @ P_cov @ A_aug.T + dyn_cov
-
-    #measurement update
     y = rk4_step_noise(y, dt,params,u[0][0][0],dist, Cd)  #updating states with non-linear dynamics
 
-    K_fac = P_cov @ C_aug.T @ np.linalg.inv(C_aug@P_cov@C_aug.T + meas_cov) #Kalman gain
-    x_aug = x_aug + K_fac @ (y.reshape(-1,1) - C_aug @ x_aug)
-    P_cov = P_cov - K_fac @ C_aug @ P_cov
+    x_aug = x_aug + L @ (y.reshape(-1,1) - C_aug @ x_aug)
 
     states_aug.append(x_aug)
 

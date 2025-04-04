@@ -29,7 +29,7 @@ def dynamics(y,params,F):
     #returning the derivative of the states
     return np.array([v, omega1, omega2, x_ddot, theta1_ddot, theta2_ddot])
 
-def dist_noise_dynamics(y,params,F,d,noise_std):
+def dist_noise_dynamics(y,params,F,d):
 
     x, theta1, theta2, v, omega1, omega2 = y
     M, m1, m2 = params["M"], params["m1"], params["m2"]
@@ -56,12 +56,7 @@ def dist_noise_dynamics(y,params,F,d,noise_std):
     # Solve for accelerations
     x_ddot, theta1_ddot, theta2_ddot = np.linalg.solve(A, B)
 
-    #simulating the noise
-    w = np.random.multivariate_normal(np.array([0,0,0,0,0,0]),noise_std)
-
-    # print(w)
-
-    new_y = np.array([v, omega1, omega2, x_ddot, theta1_ddot, theta2_ddot]) + w
+    new_y = np.array([v, omega1, omega2, x_ddot, theta1_ddot, theta2_ddot]) 
 
     # print(new_y)
 
@@ -78,48 +73,14 @@ def rk4_step(xk, dt, params,F):
     return xk + (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
 # RK4 Integration
-def rk4_step_noise(xk, dt, params,F,d,noise_std):
-    k1 = dt * dist_noise_dynamics(xk, params,F,d,noise_std)
-    k2 = dt * dist_noise_dynamics(xk + k1 / 2,params,F,d,noise_std)
-    k3 = dt * dist_noise_dynamics(xk + k2 / 2,params,F,d,noise_std)
-    k4 = dt * dist_noise_dynamics(xk + k3,params,F,d,noise_std)
-    return xk + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+def rk4_step_noise(xk, dt, params, F, d, Cd):
+    k1 = dt * dist_noise_dynamics(xk, params,F,d)
+    k2 = dt * dist_noise_dynamics(xk + k1 / 2,params,F,d)
+    k3 = dt * dist_noise_dynamics(xk + k2 / 2,params,F,d)
+    k4 = dt * dist_noise_dynamics(xk + k3,params,F,d)
+    dist = (Cd*d).reshape(1,-1)
 
-if __name__ == "__main__":
-    # Time setup
-    dt = 0.001
-    T = 10
-    time = np.arange(0, T, dt)
-
-    path_in_dir_script = Path(__file__).parent #fold where the main script is
-    path_out_dir = path_in_dir_script / "../out/MPC"
-    path_out_dir.mkdir(exist_ok=True)
-
-    with open(path_in_dir_script/"config.json", "r") as file:
-        params = json.load(file) 
-
-    # Initial conditions
-    y = np.array([0, 0.1, 0.1, 0, 0, 0])
-    states = [y]
-
-    noise_std = np.eye(y.shape[0])
-
-    dist = []
-
-    # Simulation loop
-    for t in time:
-        if t<T/2:
-            y = rk4_step_noise(y, dt,params,0,1,noise_std=noise_std)
-            dist.append([1])
-        else:
-            y = rk4_step_noise(y, dt,params,0,0,noise_std=noise_std)
-            dist.append([0])
-        states.append(y)
-
-    # Convert to array for analysis
-    states = np.array(states)
-
-    dist = np.array(dist)
+    return xk + (k1 + 2 * k2 + 2 * k3 + k4) / 6 + dist[0] 
 
 
 

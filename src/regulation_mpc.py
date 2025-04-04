@@ -92,30 +92,33 @@ theta_const = math.radians(10)
 x_const = 3
 u_const = 100
 
-x_ref = np.array([2,math.radians(0),-math.radians(0),0,0,0])
+x_ref = np.array([0,math.radians(0),-math.radians(0),0,0,0]).reshape(-1,1)
 u_ref = 0
 
-x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')])
-x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')])
-u_ub = u_const
-u_lb = -u_const
+x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')]).reshape(-1,1)
+x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')]).reshape(-1,1)
+u_ub = np.array(u_const).reshape(-1,1)
+u_lb = np.array(-u_const).reshape(-1,1)
 
 control_inputs = [0]
 
 #MPC horizon
-N = (T/dt)*0.5
+N = (T/dt)*0.2
 N = int(N)  
 print(N)
+
 # Simulation loop
 for t in time:
-    u = mpc_solve(A, B, Q, R, P, states[-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
+
+    x_cur = states[-1].reshape(-1,1)
+    u = mpc_solve(A, B, Q, R, P, x_cur, N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
     print(f"Percentage done",(t/T)*100)
-    y = rk4_step(y, dt,params,u[0][0])
-    control_inputs.append(u[0][0])
+    y = rk4_step(y, dt,params,u[0][0][0])
+    control_inputs.append(u[0][0][0])
     print(f"Position:",y[0])
     print(f"Theta1:",math.degrees(y[1]))
     print(f"Theta2:",math.degrees(y[2]))
-    print(f'Force:',u[0][0])
+    print(f'Force:',u[0][0][0])
     states.append(y)
 
 states = np.array(states)
@@ -128,20 +131,20 @@ plt.savefig(path_out_dir/"./Control_input.png")
 
 plt.figure()
 plt.plot(states[:,0])
-plt.savefig(path_out_dir/"./Position_offset_free.png")
+plt.savefig(path_out_dir/"./Position.png")
 
 plt.figure()
 plt.plot(np.rad2deg(states[:,1]))
 plt.plot(np.rad2deg(states[:,2]))
 plt.legend(['Theta1','Theta2'])
-plt.savefig(path_out_dir/"./theta_offset_free.png")
+plt.savefig(path_out_dir/"./theta.png")
 
 plt.figure()
 plt.plot(states[:,3])
-plt.savefig(path_out_dir/"./Position_dot_offset_free.png")
+plt.savefig(path_out_dir/"./Position_dot.png")
 
 plt.figure()
 plt.plot(states[:,4])
 plt.plot(states[:,5])
 plt.legend(['Theta1_dot','Theta2_dot'])
-plt.savefig(path_out_dir/"./theta_dot_offset_free.png")
+plt.savefig(path_out_dir/"./theta_dot.png")

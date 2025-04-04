@@ -67,9 +67,9 @@ B = dsys[1]
 C = dsys[2]
 D = dsys[3]
 
-Q = sp.linalg.block_diag(100,100,100,1,1,1)
+Q = sp.linalg.block_diag(1000,100,100,1,1,1)
 
-R = 1
+R = 100
 
 K,S,E = ct.dlqr(A,B,Q,R)
 
