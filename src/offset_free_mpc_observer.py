@@ -14,7 +14,7 @@ from scipy.signal import place_poles
 
 
 path_in_dir_script = Path(__file__).parent #fold where the main script is
-path_out_dir = path_in_dir_script / "../out/Offset_free_MPC"
+path_out_dir = path_in_dir_script / "../out/Offset_free_MPC_Luenberger"
 path_out_dir.mkdir(exist_ok=True)
 
 with open(path_in_dir_script/"config.json", "r") as file:
@@ -119,19 +119,22 @@ R = 100
 #solution to dare
 P ,_,K = ct.dare(A, B ,Q, R)
 
+#poles for observer in continous system
+poles = np.array([-48, -50, -45, -51, -49, -39, -20])
+
 #poles of observer (placed inside the unit circle)
-poles = [0.75,0.7,0.6,0.75,0.75,0.75,0.9]
+poles = np.exp(dt*poles)
+
+print(f'Discrete poles:',poles)
 
 L = place_poles(A_aug.T,C_aug.T,poles)
-L = L.gain_matrix.T
-
+L = L.gain_matrix.T #Creating array
 
 #Disturbance on the system
 dist = 1 #constant disturbance to the system
 
 #prior for kalman filter
 x_aug = np.array([0, 0, 0, 0, 0, 0, 0]) #augmented states with disturbance
-P_cov = 5*np.eye(x_aug.shape[0]) #prior covariance
 
 x_aug = x_aug.reshape(-1,1)
 states_aug = [x_aug]
@@ -183,21 +186,16 @@ for t in time:
     x_target.append(x_ref)
     u_target.append(u_ref[0])
 
+    print(x_aug)
     #solving the MPC
     u = mpc_solve(A, B, Q, R, P, x_aug[:-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
 
     y = rk4_step_noise(y, dt,params,u[0][0][0],dist, Cd)  #updating states with non-linear dynamics
 
-    x_aug = x_aug + L @ (y.reshape(-1,1) - C_aug @ x_aug)
+    x_aug = A_aug @ x_aug + B_aug @ u[0][0].reshape(-1,1) + L @ (y.reshape(-1,1) - C_aug @ x_aug)
 
     states_aug.append(x_aug)
-
     control_inputs.append(u[0][0][0])
-    """debug messages"""
-    # print(f"Position:",y[0])
-    # print(f"Theta1:",math.degrees(y[1]))
-    # print(f"Theta2:",math.degrees(y[2]))
-    # print(f'Force:',u[0][0])
     states.append(y)
     error.append(y.reshape(-1,1)-x_aug[:-1])
 

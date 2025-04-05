@@ -76,13 +76,12 @@ K,S,E = ct.dlqr(A,B,Q,R)
 T = 10
 time = np.arange(0, T, dt)
 
-y = np.array([0, math.radians(10), -math.radians(10), 0, 0, 0])
+y = np.array([0, -0.125, 0.125, 0, 0, 0])
 states = [y]
 control_inputs = [0]
 
 for t in time:
     u = - K @ y
-    # print(u)
     y = rk4_step(y, dt,params,u[0])
     states.append(y)
     control_inputs.append(u[0])
@@ -100,8 +99,16 @@ plt.savefig(path_out_dir/"./Position_lqr.png")
 
 plt.figure()
 plt.plot(np.rad2deg(states[:,1]))
-plt.savefig(path_out_dir/"./theta1_lqr.png")
+plt.plot(np.rad2deg(states[:,2]))
+plt.legend(['Theta_1',"Theta_2"])
+plt.savefig(path_out_dir/"./theta_lqr.png")
 
 plt.figure()
-plt.plot(np.rad2deg(states[:,2]))
-plt.savefig(path_out_dir/"./theta2_lqr.png")
+plt.plot(states[:,3])
+plt.savefig(path_out_dir/"./Position_dot_lqr.png")
+
+plt.figure()
+plt.plot(states[:,4])
+plt.plot(states[:,5])
+plt.legend(['Theta_1_dot',"Theta_2_dot"])
+plt.savefig(path_out_dir/"./theta_dot_lqr.png")

@@ -67,43 +67,46 @@ B = dsys[1]
 C = dsys[2]
 D = dsys[3]
 
+print(A)
+
+print(B)
 # LQR Control
 #defining the weights
 
 print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
 
-Q = sp.linalg.block_diag(1000,100,100,1,1,1)
+Q = sp.linalg.block_diag(1000,100,100,0,0,0)
 
 R = 100
 
 #solution to dare
 P ,_,K = ct.dare(A, B,Q,R)
 
-T = 5
+T = 10
 time = np.arange(0, T, dt)
 
-y = np.array([0, -math.radians(5), math.radians(5), 0, 0, 0])
+y = np.array([0, -0.125, 0.125, 0, 0, 0])
 states = [y]
 # print(y.shape)
 
 #constraints
-
-theta_const = math.radians(10)
-x_const = 3
-u_const = 100
-
 x_ref = np.array([0,math.radians(0),-math.radians(0),0,0,0]).reshape(-1,1)
 u_ref = 0
 
-x_ub = np.array([x_const, theta_const, theta_const, float('inf'),float('inf'),float('inf')]).reshape(-1,1)
-x_lb = np.array([-x_const,-theta_const,-theta_const,float('-inf'),float('-inf'),float('-inf')]).reshape(-1,1)
+theta_const = 0.174
+x_const = 3
+u_const = 100
+o = 5
+
+x_ub = np.array([x_const, theta_const, theta_const, o, o, o]).reshape(-1,1)
+x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o]).reshape(-1,1)
 u_ub = np.array(u_const).reshape(-1,1)
 u_lb = np.array(-u_const).reshape(-1,1)
 
 control_inputs = [0]
 
 #MPC horizon
-N = (T/dt)*0.2
+N = 100
 N = int(N)  
 print(N)
 
@@ -115,10 +118,10 @@ for t in time:
     print(f"Percentage done",(t/T)*100)
     y = rk4_step(y, dt,params,u[0][0][0])
     control_inputs.append(u[0][0][0])
-    print(f"Position:",y[0])
-    print(f"Theta1:",math.degrees(y[1]))
-    print(f"Theta2:",math.degrees(y[2]))
-    print(f'Force:',u[0][0][0])
+    # print(f"Position:",y[0])
+    # print(f"Theta1:",math.degrees(y[1]))
+    # print(f"Theta2:",math.degrees(y[2]))
+    # print(f'Force:',u[0][0][0])
     states.append(y)
 
 states = np.array(states)
