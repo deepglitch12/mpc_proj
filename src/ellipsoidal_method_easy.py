@@ -51,24 +51,21 @@ def eigen_polyhedron(P, c=1.0):
 
 
 
-def findX1(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, initial_upper=5.0, tol=1e-3, max_iter=50):
-    """
-    Finds largest polyhedral set aligned with eigenvectors of P such that all vertices are feasible.
-    Uses binary search over the scaling factor.
-    """
-    lower = initial_upper
-    upper = initial_upper*2
+def findX1(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, max_iter=100, tol=1e-3):
+
+    scale = 1.001
     best_scale = 0.0
     best_V = None
 
     for _ in range(max_iter):
-        scale = (upper + lower) / 2.0
         V_check = eigen_polyhedron(P, scale)
         all_satisfied = True
 
         for v in V_check:
             v = v.reshape(-1, 1)
-            u = mpc_solve_X(A, B, Q, R, P, v, 10, x_lb, x_ub, u_lb, u_ub, c)
+
+            u = mpc_solve_X(A, B, Q, R, P, v, 1, x_lb, x_ub, u_lb, u_ub, c)
+
             if u is None:
                 all_satisfied = False
                 break
@@ -76,19 +73,20 @@ def findX1(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, initial_upper=5.0, tol=1
         if all_satisfied:
             best_scale = scale
             best_V = V_check
-            lower = scale  # Try bigger set
+            scale *= 1.1  # Try larger set
+            print(f"Increasing set size:",scale)
         else:
-            upper = scale  # Too large, reduce
+            scale *= 0.9  # Reduce set size
+            print(f"decreasing set size:",scale)
             
-        if abs(upper - lower) < tol:
+        if abs(scale - best_scale) < tol:
             break
 
     return best_V, best_scale
 
 
 
-
-def find_maximal_terminal_set(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, max_iter=1000, tol=1e-5):
+def find_maximal_terminal_set(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, max_iter=1000, tol=0):
     """
     Finds the maximal terminal set satisfying all constraints
     
@@ -172,6 +170,9 @@ def solve_lyapunov_discrete(A, Q):
     P = vec_P.reshape(n, n)
     
     return P
+
+def random_point_check(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, max_iter=100, tol=1e-3):
+    
     
 
 def get_minimum_volume_ellipse(points, tolerance=0.01):
@@ -240,7 +241,7 @@ def project_vertices_2d(vertices, state_indices=[0, 1], ax=None, color='blue'):
     center, A = get_minimum_volume_ellipse(proj_vertices)
 
     for i in range(vertices.shape[0]):
-        ax.plot(vertices[i,state_indices[0]],vertices[i,state_indices[1]],'*')
+        ax.plot(vertices[i,0],vertices[i,1],'*')
     
     # Get ellipse parameters (SVD of shape matrix)
     U, s, V = np.linalg.svd(A)
@@ -262,7 +263,7 @@ def project_vertices_2d(vertices, state_indices=[0, 1], ax=None, color='blue'):
     ax.legend()
     ax.set_aspect('equal')  # Ensure equal scaling for x and y axes
     
-    return fig, ax
+    return fig, ax  
 
 if __name__ == '__main__':
     path_in_dir_script = Path(__file__).parent #fold where the main script is
@@ -272,54 +273,14 @@ if __name__ == '__main__':
     with open(path_in_dir_script/"config.json", "r") as file:
         params = json.load(file) 
 
-    #defining the constants
-    M, m1, m2 = params["M"], params["m1"], params["m2"]
-    L1, L2 = params["L1"], params["L2"]
-    l1, l2 = params["l1"], params["l2"]
-    I1, I2 = params["I1"], params["I2"]
-    g = params["g"]
 
-    #defining the matrices for the linearized system
+    dt = 0.01
 
-    J = np.array([[1,0,0,0,0,0],
-                [0,1,0,0,0,0],
-                [0,0,1,0,0,0],
-                [0,0,0,M+m1+m2,(m1*l1+m2*L1),m2*l2],
-                [0,0,0,(m1*l1+m2*L1),m1*(l1**2)+m2*(L1**2)+I1,m2*L1*l2],
-                [0,0,0,m2*l2,m2*L1*l2,m2*(l2**2)+I2]])
-
-    N = np.array([[0,0,0,1,0,0],
-                [0,0,0,0,1,0],
-                [0,0,0,0,0,1],
-                [0,0,0,0,0,0],
-                [0,(m1*l1 + m2*L1)*g,0,0,0,0],
-                [0,0,m2*l2*g,0,0,0]])
-
-    F = np.array([[0],
-                [0],
-                [0],
-                [1],
-                [0],
-                [0]])
-
-
-    #continuous dynamic matrices
-
-    Ac = np.linalg.inv(J) @ N
-    Bc = np.linalg.inv(J) @ F
-
-    Cc = np.eye(Ac.shape[0])
-    Dc = np.zeros(Bc.shape)
-
-    #discretizing the system
-    dt= 0.01
-
-    dsys = sp.signal.cont2discrete((Ac,Bc,Cc,Dc),dt,method='zoh')
-
-    A = dsys[0]
-    B = dsys[1]
-    C = dsys[2]
-    D = dsys[3]
+    A = np.array([[1,1],
+                [0,1]])
+    
+    B = np.array([[0],
+                [1]])
 
     #checking for Controllability
     if np.linalg.matrix_rank(ct.ctrb(A,B)) == A.shape[0]:
@@ -329,9 +290,9 @@ if __name__ == '__main__':
         quit()
 
     #Q and R Matrices
-    Q = sp.linalg.block_diag(1000,100,100,1,1,1) #having no weight on the disturbance component
+    Q = np.eye(A.shape[0]) #having no weight on the disturbance component
 
-    R = 100*np.eye(B.shape[1])
+    R = 3*np.eye(B.shape[1])
 
     K,_,_ = ct.dlqr(A,B,Q,R)
 
@@ -349,37 +310,31 @@ if __name__ == '__main__':
     P = solve_lyapunov_discrete(Ak,Qk) #Solution to equation given in slides ... sus!!!
 
     theta_const = 0.174 #10 degrees in radians
-    x_const = 3
-    u_const = float('inf')
-    o = float('inf')
+    x_const = 3/4
+    u_const = 1/2
+    o = 5
 
-    x_ub = np.array([x_const, theta_const, theta_const, o, o, o]).reshape(-1,1)
-    x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o]).reshape(-1,1)
+    x_ub = np.array([x_const, x_const]).reshape(-1,1)
+    x_lb = np.array([-x_const,-x_const]).reshape(-1,1)
     u_ub = np.array(u_const).reshape(-1,1)
     u_lb = np.array(-u_const).reshape(-1,1)
 
-    x_ref = np.array([0,math.radians(0),-math.radians(0),0,0,0]).reshape(-1,1)
-    u_ref = 0
-
     terminal_vertices, scaling_factor = find_maximal_terminal_set(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb)
-    print(f"Found terminal set with scaling factor: {scaling_factor}")
-    # print(f"terminal set vertices:",terminal_vertices)
 
     c = 0.5 * terminal_vertices[0,:] @ P @ terminal_vertices[0,:].T
+    print(f"Found terminal set with scaling factor: {scaling_factor}")
+    print(f"c=", c)
 
+    
 
-    X1, cc = findX1(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb,c,scaling_factor)
+    X1, cc = findX1(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb,c)
 
-    fig1, ax1 = project_vertices_2d(terminal_vertices, state_indices=[1,2])  
-    fig1 ,ax1 = project_vertices_2d(X1, state_indices=[1,2],ax=ax1,color='red')
+    fig1, ax1 = project_vertices_2d(terminal_vertices, state_indices=[0,1])  
+    fig1 ,ax1 = project_vertices_2d(X1, state_indices=[0,1],ax=ax1,color='red')
     plt.show()
 
-    fig2, ax2 = project_vertices_2d(terminal_vertices, state_indices=[0,3])  
-    fig2 ,ax2 = project_vertices_2d(X1, state_indices=[0,3],ax=ax2,color='red')
-    plt.show()
-
-    fig3, ax3 = project_vertices_2d(terminal_vertices, state_indices=[4,5])  
-    fig3 ,ax3 = project_vertices_2d(X1, state_indices=[4,5],ax=ax3,color='red')
+    # fig2, ax2 = project_vertices_2d(terminal_vertices, state_indices=[1,2])  
+    # fig2 ,ax2 = project_vertices_2d(X1, state_indices=[0,3],ax=ax2,color='red')
     plt.show()
 
 

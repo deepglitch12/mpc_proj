@@ -76,7 +76,8 @@ K,S,E = ct.dlqr(A,B,Q,R)
 T = 10
 time = np.arange(0, T, dt)
 
-y = np.array([0, -0.125, 0.125, 0, 0, 0])
+# y = np.array([0, -0.125, 0.125, 0, 0, 0])
+y = np.array([1, 0, 0, 0, 0, 0])
 states = [y]
 control_inputs = [0]
 

@@ -109,7 +109,7 @@ else:
 #Duration of the experiment
 T = 10
 time = np.arange(0, T, dt)
-
+    
 #Q and R Matrices
 Q = sp.linalg.block_diag(1000,100,100,1,1,1) #having no weight on the disturbance component
 

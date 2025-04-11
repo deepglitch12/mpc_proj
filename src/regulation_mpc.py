@@ -86,6 +86,7 @@ T = 10
 time = np.arange(0, T, dt)
 
 y = np.array([0, -0.125, 0.125, 0, 0, 0])
+# y = np.array([1, 0, 0, 0, 0, 0])
 states = [y]
 # print(y.shape)
 
@@ -106,15 +107,19 @@ u_lb = np.array(-u_const).reshape(-1,1)
 control_inputs = [0]
 
 #MPC horizon
-N = 100
+N = 20
 N = int(N)  
 print(N)
-
+flag = True
 # Simulation loop
 for t in time:
 
     x_cur = states[-1].reshape(-1,1)
     u = mpc_solve(A, B, Q, R, P, x_cur, N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
+    if u is None:
+        print("MPC not possible for the given conditions")
+        flag = False
+        break
     print(f"Percentage done",(t/T)*100)
     y = rk4_step(y, dt,params,u[0][0][0])
     control_inputs.append(u[0][0][0])
@@ -124,30 +129,31 @@ for t in time:
     # print(f'Force:',u[0][0][0])
     states.append(y)
 
-states = np.array(states)
-animated(states, time, params, control_inputs,path_out_dir/"MPC.gif")
+if flag:
+    states = np.array(states)
+    animated(states, time, params, control_inputs,path_out_dir/"MPC.gif")
 
-plt.figure()
-plt.plot(control_inputs)
-plt.savefig(path_out_dir/"./Control_input.png")
+    plt.figure()
+    plt.plot(control_inputs)
+    plt.savefig(path_out_dir/"./Control_input.png")
 
 
-plt.figure()
-plt.plot(states[:,0])
-plt.savefig(path_out_dir/"./Position.png")
+    plt.figure()
+    plt.plot(states[:,0])
+    plt.savefig(path_out_dir/"./Position.png")
 
-plt.figure()
-plt.plot(np.rad2deg(states[:,1]))
-plt.plot(np.rad2deg(states[:,2]))
-plt.legend(['Theta1','Theta2'])
-plt.savefig(path_out_dir/"./theta.png")
+    plt.figure()
+    plt.plot(np.rad2deg(states[:,1]))
+    plt.plot(np.rad2deg(states[:,2]))
+    plt.legend(['Theta1','Theta2'])
+    plt.savefig(path_out_dir/"./theta.png")
 
-plt.figure()
-plt.plot(states[:,3])
-plt.savefig(path_out_dir/"./Position_dot.png")
+    plt.figure()
+    plt.plot(states[:,3])
+    plt.savefig(path_out_dir/"./Position_dot.png")
 
-plt.figure()
-plt.plot(states[:,4])
-plt.plot(states[:,5])
-plt.legend(['Theta1_dot','Theta2_dot'])
-plt.savefig(path_out_dir/"./theta_dot.png")
+    plt.figure()
+    plt.plot(states[:,4])
+    plt.plot(states[:,5])
+    plt.legend(['Theta1_dot','Theta2_dot'])
+    plt.savefig(path_out_dir/"./theta_dot.png")
