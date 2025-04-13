@@ -105,59 +105,6 @@ u_lb = np.array(-u_const).reshape(-1,1)
 
 control_inputs = [0]
 
-#MPC horizon
-# for i in range(20, 51, 10):
-#     N = i  
-#     print(N)
-#     flag = True
-#     # Simulation loop
-#     for t in time:
-
-#         x_cur = states[-1].reshape(-1,1)
-#         u = mpc_solve(A, B, Q, R, P, x_cur, N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
-#         if u is None:
-#             print("MPC not possible for the given conditions")
-#             flag = False
-#             break
-#         print(f"Percentage done",(t/T)*100)
-#         y = rk4_step(y, dt,params,u[0][0][0])
-#         control_inputs.append(u[0][0][0])
-#         # print(f"Position:",y[0])
-#         # print(f"Theta1:",math.degrees(y[1]))
-#         # print(f"Theta2:",math.degrees(y[2]))
-#         # print(f'Force:',u[0][0][0])
-#         states.append(y)
-
-#     if flag:
-#         states = np.array(states)
-#         animated(states, time, params, control_inputs,path_out_dir/"MPC.gif")
-
-#         plt.figure()
-#         plt.plot(control_inputs)
-#         plt.savefig(path_out_dir/"./Control_input.png")
-
-
-#         plt.figure()
-#         plt.plot(states[:,0])
-#         plt.savefig(path_out_dir/"./Position.png")
-
-#         plt.figure()
-#         plt.plot(np.rad2deg(states[:,1]))
-#         plt.plot(np.rad2deg(states[:,2]))
-#         plt.legend(['Theta1','Theta2'])
-#         plt.savefig(path_out_dir/"./theta.png")
-
-#         plt.figure()
-#         plt.plot(states[:,3])
-#         plt.savefig(path_out_dir/"./Position_dot.png")
-
-#         plt.figure()
-#         plt.plot(states[:,4])
-#         plt.plot(states[:,5])
-#         plt.legend(['Theta1_dot','Theta2_dot'])
-#         plt.savefig(path_out_dir/"./theta_dot.png")
-
-
 # Initialize figures and axes for overlapping plots
 fig_u, ax_u = plt.subplots()
 fig_x, ax_x = plt.subplots()

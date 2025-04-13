@@ -126,34 +126,6 @@ for t in time:
     control_inputs.append(u[0][0][0])
     states.append(y)
 
-# if flag:
-#     states = np.array(states)
-#     animated(states, time, params, control_inputs,path_out_dir/"MPC.gif")
-
-#     plt.figure()
-#     plt.plot(control_inputs)
-#     plt.savefig(path_out_dir/"./Control_input.png")
-
-
-#     plt.figure()
-#     plt.plot(states[:,0])
-#     plt.savefig(path_out_dir/"./Position.png")
-
-#     plt.figure()
-#     plt.plot(np.rad2deg(states[:,1]))
-#     plt.plot(np.rad2deg(states[:,2]))
-#     plt.legend(['Theta1','Theta2'])
-#     plt.savefig(path_out_dir/"./theta.png")
-
-#     plt.figure()
-#     plt.plot(states[:,3])
-#     plt.savefig(path_out_dir/"./Position_dot.png")
-
-#     plt.figure()
-#     plt.plot(states[:,4])
-#     plt.plot(states[:,5])
-#     plt.legend(['Theta1_dot','Theta2_dot'])
-#     plt.savefig(path_out_dir/"./theta_dot.png")
 
 
 K_LQR,S_LQR,E_LQR = ct.dlqr(A,B,Q,R)
@@ -174,31 +146,6 @@ for t in time:
 
 states_LQR = np.array(states_LQR)
 #animated(states, time, params, control_inputs,path_out_dir/"./Simualtion_lqr.gif")
-
-# plt.figure()
-# plt.plot(control_inputs)
-# plt.savefig(path_out_dir/"./Control_input_lqr.png")
-
-# plt.figure()
-# plt.plot(states[:,0])
-# plt.savefig(path_out_dir/"./Position_lqr.png")
-
-# plt.figure()
-# plt.plot(np.rad2deg(states[:,1]))
-# plt.plot(np.rad2deg(states[:,2]))
-# plt.legend(['Theta_1',"Theta_2"])
-# plt.savefig(path_out_dir/"./theta_lqr.png")
-
-# plt.figure()
-# plt.plot(states[:,3])
-# plt.savefig(path_out_dir/"./Position_dot_lqr.png")
-
-# plt.figure()
-# plt.plot(states[:,4])
-# plt.plot(states[:,5])
-# plt.legend(['Theta_1_dot',"Theta_2_dot"])
-# plt.savefig(path_out_dir/"./theta_dot_lqr.png")
-
 
 states = np.array(states)
 

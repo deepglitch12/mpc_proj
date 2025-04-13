@@ -124,10 +124,6 @@ for t in time:
     print(f"Percentage done",(t/T)*100)
     y = rk4_step(y, dt,params,u[0][0][0])
     control_inputs.append(u[0][0][0])
-    # print(f"Position:",y[0])
-    # print(f"Theta1:",math.degrees(y[1]))
-    # print(f"Theta2:",math.degrees(y[2]))
-    # print(f'Force:',u[0][0][0])
     states.append(y)
 
 if flag:

@@ -383,20 +383,8 @@ if __name__ == '__main__':
 
     fig1, ax1 = project_vertices_2d(terminal_vertices, state_indices=[1,2])  
     fig1 ,ax1 = project_vertices_2d(X1, state_indices=[1,2],ax=ax1,color='purple')
-
-    # draw_constraints(x_ub, x_lb, ax1, state_indices=[1,2])
+    draw_constraints(x_ub, x_lb, ax1, state_indices=[1,2])
 
     plt.show()
-
-    # fig2, ax2 = project_vertices_2d(terminal_vertices, state_indices=[0,3])  
-    # draw_constraints(x_ub, x_lb, ax2, state_indices=[0,3])
-    # # fig2 ,ax2 = project_vertices_2d(X1, state_indices=[0,3],ax=ax2,color='purple')
-    # plt.show()
-
-    # fig3, ax3 = project_vertices_2d(terminal_vertices, state_indices=[4,5])  
-    # draw_constraints(x_ub, x_lb, ax1, state_indices=[4,5])
-    # fig3 ,ax3 = project_vertices_2d(X1, state_indices=[4,5],ax=ax3,color='purple')
-    # plt.show()
-
 
 
