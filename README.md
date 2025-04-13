@@ -1,3 +1,5 @@
+
+
 MPC Project : Double Inverted Pendulum on a cart 
 
 This project attempts to find the optimal control for a Double inverted pendulum with one end fixed to a moving cart using MPC.
