@@ -76,7 +76,7 @@ print(B)
 
 print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
 
-Q = sp.linalg.block_diag(1000,100,100,0,0,0)
+Q = sp.linalg.block_diag(1000,100,100,1000,1,1)
 
 R = 100
 
@@ -157,4 +157,4 @@ if flag:
     plt.plot(states[:,4])
     plt.plot(states[:,5])
     plt.legend(['Theta1_dot','Theta2_dot'])
-    plt.savefig(path_out_dir/"./theta_dot_1.png")
+    plt.savefig(path_out_dir/"./theta_dot.png")

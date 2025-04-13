@@ -25,6 +25,7 @@ def mpc_solve(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref):
         constraints += [x_bar[t+1, :] == A @ x_bar[t, :] + B @ u_bar[t, :]]
         constraints += [x_bar[t+1, :] <= x_ub , x_bar[t+1,:] >= x_lb]
         constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub] 
+        
 
         cost += 0.5 * cp.quad_form(x_bar[t, :] - x_ref, Q) + 0.5 * cp.quad_form(u_bar[t, :] - u_ref, R*np.eye(u_bar[t,:].shape[0]))
     
@@ -93,6 +94,7 @@ def mpc_solve_beta(A, B, Q, R, P, x0, N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref, b
         constraints += [x_bar[t+1, :] == A @ x_bar[t, :] + B @ u_bar[t, :]]
         constraints += [x_bar[t+1, :] <= x_ub , x_bar[t+1,:] >= x_lb]
         constraints += [u_lb <= u_bar[t, :], u_bar[t, :] <= u_ub] 
+        
 
         cost += 0.5 * cp.quad_form(x_bar[t, :] - x_ref, Q) + 0.5 * cp.quad_form(u_bar[t, :] - u_ref, R*np.eye(u_bar[t,:].shape[0]))
     

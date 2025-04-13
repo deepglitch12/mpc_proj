@@ -166,7 +166,7 @@ u_des = np.array(u_des).reshape(-1, 1)
 control_inputs = [0]
 
 #determining the horizon
-N = 100
+N = 40
 N = int(N) 
 
 #storing the errors
