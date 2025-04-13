@@ -9,6 +9,7 @@ from draw import animated
 from mpc_solver import mpc_solve
 import math
 from pathlib import Path
+from ellipsoidal_method import find_maximal_terminal_set
 
 
 path_in_dir_script = Path(__file__).parent #fold where the main script is
@@ -58,7 +59,7 @@ Cc = np.eye(Ac.shape[0])
 Dc = np.zeros(Bc.shape)
 
 #discretizing the system
-dt= 0.01
+dt= 0.02
 
 dsys = sp.signal.cont2discrete((Ac,Bc,Cc,Dc),dt,method='zoh')
 
@@ -97,7 +98,7 @@ u_ref = 0
 theta_const = 0.174
 x_const = 3
 u_const = 100
-o = 5
+o = 10
 
 x_ub = np.array([x_const, theta_const, theta_const, o, o, o]).reshape(-1,1)
 x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o]).reshape(-1,1)
@@ -107,7 +108,7 @@ u_lb = np.array(-u_const).reshape(-1,1)
 control_inputs = [0]
 
 #MPC horizon
-N = 20
+N = 40
 N = int(N)  
 print(N)
 flag = True
@@ -135,25 +136,25 @@ if flag:
 
     plt.figure()
     plt.plot(control_inputs)
-    plt.savefig(path_out_dir/"./Control_input.png")
+    plt.savefig(path_out_dir/"./Control_input_1.png")
 
 
     plt.figure()
     plt.plot(states[:,0])
-    plt.savefig(path_out_dir/"./Position.png")
+    plt.savefig(path_out_dir/"./Position_1.png")
 
     plt.figure()
     plt.plot(np.rad2deg(states[:,1]))
     plt.plot(np.rad2deg(states[:,2]))
     plt.legend(['Theta1','Theta2'])
-    plt.savefig(path_out_dir/"./theta.png")
+    plt.savefig(path_out_dir/"./theta_1.png")
 
     plt.figure()
     plt.plot(states[:,3])
-    plt.savefig(path_out_dir/"./Position_dot.png")
+    plt.savefig(path_out_dir/"./Position_dot_1.png")
 
     plt.figure()
     plt.plot(states[:,4])
     plt.plot(states[:,5])
     plt.legend(['Theta1_dot','Theta2_dot'])
-    plt.savefig(path_out_dir/"./theta_dot.png")
+    plt.savefig(path_out_dir/"./theta_dot_1.png")

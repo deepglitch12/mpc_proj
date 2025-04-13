@@ -171,8 +171,34 @@ def solve_lyapunov_discrete(A, Q):
     
     return P
 
-def random_point_check(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, max_iter=100, tol=1e-3):
-    
+def random_point_check(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c,state_indices, ax, max_iter=1000):
+
+    fig = ax.figure
+
+    for _ in range(max_iter):
+        
+        point = np.random.uniform(low = -np.max(x_ub), high=np.max(x_ub), size=(A.shape[0],1))
+
+        if terminal_cost(point,P) < c:
+            continue
+
+        all_satisfied = True
+
+        u = mpc_solve_X(A, B, Q, R, P, point, 1, x_lb, x_ub, u_lb, u_ub, c)
+
+        if u is None:
+            all_satisfied = False
+
+        proj_point = point[state_indices]
+        if all_satisfied:
+            
+            ax.plot(proj_point[0],proj_point[1],marker='x',color='green')
+            
+        else:
+            ax.plot(proj_point[0],proj_point[1],marker='x',color='red')
+
+    return fig, ax
+
     
 
 def get_minimum_volume_ellipse(points, tolerance=0.01):
@@ -331,6 +357,7 @@ if __name__ == '__main__':
 
     fig1, ax1 = project_vertices_2d(terminal_vertices, state_indices=[0,1])  
     fig1 ,ax1 = project_vertices_2d(X1, state_indices=[0,1],ax=ax1,color='red')
+    fig1 ,ax1 = random_point_check(A, B, K, P, Q, R, x_ub, x_lb, u_ub, u_lb, c, state_indices=[0,1],ax=ax1)
     plt.show()
 
     # fig2, ax2 = project_vertices_2d(terminal_vertices, state_indices=[1,2])  
