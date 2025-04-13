@@ -6,7 +6,7 @@ import scipy as sp
 import control as ct
 from non_linear_dynamics import rk4_step_noise
 from draw import animated
-from mpc_solver import mpc_solve
+from mpc_solver import mpc_solve, mpc_solve_beta
 import math
 from pathlib import Path
 from optimal_target import opti_target_online
@@ -111,16 +111,17 @@ T = 10
 time = np.arange(0, T, dt)
     
 #Q and R Matrices
-Q = sp.linalg.block_diag(1000,100,100,1,1,1) #having no weight on the disturbance component
+Q = sp.linalg.block_diag(1000,100,100,1000,10,10) #having no weight on the disturbance component
 
 R = 100
 
+beta = 10
 #solution to dare
 P ,_,K = ct.dare(A, B ,Q, R)
 
 #Noise covariance for the system
-meas_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2])
-dyn_cov = np.diag([1e-3, 1e-2, 1e-2, 1e-3, 1e-3, 1e-3,0])
+meas_cov = np.diag([1e-4, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3])
+dyn_cov = 0.1*np.diag([2e-2, 2e-2, 2e-2, 2e-2, 2e-2, 2e-2,0])
 
 #Disturbance on the system
 dist = 1 #constant disturbance to the system
@@ -132,14 +133,14 @@ P_cov = 5*np.eye(x_aug.shape[0]) #prior covariance
 x_aug = x_aug.reshape(-1,1)
 states_aug = [x_aug]
 
-y = np.array([1, -math.radians(5), math.radians(5), 0, 0, 0]) #initial sates
+y = np.array([0.5, -math.radians(5), math.radians(5), 0, 0, 0]) #initial sates
 states = [y]
 
 #Constraints
 theta_const = math.radians(10)
 x_const = 3
 u_const = 100
-o = 5
+o = 10
 
 x_ub = np.array([x_const, theta_const, theta_const, o, o, o]).reshape(-1,1)
 x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o]).reshape(-1,1)
@@ -159,7 +160,7 @@ u_des = np.array(u_des).reshape(-1, 1)
 control_inputs = [0]
 
 #determining the horizon
-N = 100
+N = 40
 N = int(N) 
 
 #storing the errors
@@ -180,7 +181,7 @@ for t in time:
     u_target.append(u_ref[0])
 
     #solving the MPC
-    u = mpc_solve(A, B, Q, R, P, x_aug[:-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref)
+    u = mpc_solve_beta(A, B, Q, R, P, x_aug[:-1], N, x_lb, x_ub, u_lb, u_ub, x_ref, u_ref, beta)
 
     #time update
     
@@ -213,75 +214,134 @@ u_target = np.array(u_target)
 
 animated(states, time, params, control_inputs,path_out_dir/"MPC_offset_free.gif")
 
-#plotting everything
 plt.figure()
 plt.plot(states_aug[:,6])
+plt.title("Estimated Disturbance")
+plt.xlabel("Time Step")
+plt.ylabel("Disturbance Estimate")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Estimated_Disturbance.png")
 
 plt.figure()
 plt.plot(states_aug[:,0])
+plt.title("Position (Offset-Free MPC)")
+plt.xlabel("Time Step")
+plt.ylabel("Position [m]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_offset_free.png")
 
 plt.figure()
 plt.plot(np.rad2deg(states_aug[:,1]))
 plt.plot(np.rad2deg(states_aug[:,2]))
-plt.legend(['Theta1','Theta2'])
+plt.legend(['Theta1', 'Theta2'])
+plt.title("Angles (Offset-Free MPC)")
+plt.xlabel("Time Step")
+plt.ylabel("Angle [deg]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_offset_free.png")
 
 plt.figure()
 plt.plot(states_aug[:,3])
+plt.title("Cart Velocity (Offset-Free MPC)")
+plt.xlabel("Time Step")
+plt.ylabel("Velocity [m/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_dot_offset_free.png")
 
 plt.figure()
 plt.plot(states_aug[:,4])
 plt.plot(states_aug[:,5])
-plt.legend(['Theta1_dot','Theta2_dot'])
+plt.legend(['Theta1_dot', 'Theta2_dot'])
+plt.title("Angular Velocities (Offset-Free MPC)")
+plt.xlabel("Time Step")
+plt.ylabel("Angular Velocity [rad/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_dot_offset_free.png")
 
 plt.figure()
 plt.plot(control_inputs)
+plt.title("Control Input (Offset-Free MPC)")
+plt.xlabel("Time Step")
+plt.ylabel("Force [N]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Control_input_offset_free.png")
 
 plt.figure()
 plt.plot(error[:,0])
+plt.title("Position Tracking Error")
+plt.xlabel("Time Step")
+plt.ylabel("Error [m]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_error.png")
 
 plt.figure()
 plt.plot(np.rad2deg(error[:,1]))
 plt.plot(np.rad2deg(error[:,2]))
-plt.legend(['Theta1','Theta2'])
+plt.legend(['Theta1', 'Theta2'])
+plt.title("Angle Tracking Error")
+plt.xlabel("Time Step")
+plt.ylabel("Error [deg]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_error.png")
 
 plt.figure()
 plt.plot(error[:,3])
+plt.title("Velocity Tracking Error")
+plt.xlabel("Time Step")
+plt.ylabel("Error [m/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_dot_error.png")
 
 plt.figure()
 plt.plot(error[:,4])
 plt.plot(error[:,5])
-plt.legend(['Theta1_dot','Theta2_dot'])
+plt.legend(['Theta1_dot', 'Theta2_dot'])
+plt.title("Angular Velocity Tracking Error")
+plt.xlabel("Time Step")
+plt.ylabel("Error [rad/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_dot_error.png")
 
 plt.figure()
 plt.plot(x_target[:,0])
+plt.title("Target Position")
+plt.xlabel("Time Step")
+plt.ylabel("Position [m]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_target.png")
 
 plt.figure()
 plt.plot(np.rad2deg(x_target[:,1]))
 plt.plot(np.rad2deg(x_target[:,2]))
-plt.legend(['Theta1','Theta2'])
+plt.legend(['Theta1', 'Theta2'])
+plt.title("Target Angles")
+plt.xlabel("Time Step")
+plt.ylabel("Angle [deg]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_target.png")
 
 plt.figure()
 plt.plot(x_target[:,3])
+plt.title("Target Cart Velocity")
+plt.xlabel("Time Step")
+plt.ylabel("Velocity [m/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Position_dot_target.png")
 
 plt.figure()
 plt.plot(x_target[:,4])
 plt.plot(x_target[:,5])
-plt.legend(['Theta1_dot','Theta2_dot'])
+plt.legend(['Theta1_dot', 'Theta2_dot'])
+plt.title("Target Angular Velocities")
+plt.xlabel("Time Step")
+plt.ylabel("Angular Velocity [rad/s]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./theta_dot_target.png")
 
 plt.figure()
 plt.plot(u_target)
+plt.title("Target Control Input")
+plt.xlabel("Time Step")
+plt.ylabel("Force [N]")
+plt.grid(True)
 plt.savefig(path_out_dir/"./Control_input_target.png")

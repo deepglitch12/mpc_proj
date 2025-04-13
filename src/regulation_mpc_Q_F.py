@@ -75,7 +75,7 @@ print(B)
 
 print(f"Rank of Controllability Matrix:",np.linalg.matrix_rank(ct.ctrb(A,B)))
 
-Q = sp.linalg.block_diag(1000,100,100,0,0,0)
+Q = sp.linalg.block_diag(1000,100,100,1000,1,1)
 
 R = 100
 
@@ -97,7 +97,7 @@ u_ref = 0
 theta_const = 0.174
 x_const = 3
 u_const = 100
-o = 5
+o = 10
 
 x_ub = np.array([x_const, theta_const, theta_const, o, o, o]).reshape(-1,1)
 x_lb = np.array([-x_const,-theta_const,-theta_const,-o,-o,-o]).reshape(-1,1)
@@ -107,7 +107,7 @@ u_lb = np.array(-u_const).reshape(-1,1)
 control_inputs = [0]
 
 #MPC horizon
-N = 20
+N = 40
 N = int(N)  
 print(N)
 flag = True
